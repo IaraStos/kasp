@@ -1,0 +1,108 @@
+---
+title: "KASP"
+author: "Iara Gonçalves dos Santos"
+date: "03/09/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+One plate, two dilutions of KASP snpIB00031 through snpIB00060
+
+## Load data
+
+```{r cars}
+kasp <- read.csv(file = "data/Genotyping-110.002-01.csv", skip = 150, header = T)
+
+dim(kasp)
+head(kasp)
+tail(kasp)
+colnames(kasp)
+str(kasp)
+kasp$DaughterPlate <- as.factor(kasp$DaughterPlate)
+kasp$MasterPlate <- as.factor(kasp$MasterPlate)
+kasp$SNPID <- as.factor(kasp$SNPID)
+kasp$SubjectID <- as.factor(kasp$SubjectID)
+
+str(kasp)
+```
+
+## Visualization
+
+Plotting the data
+
+```{r}
+plot(kasp$X, kasp$Y)
+```
+
+```{r eval=FALSE}
+install.packages("ggplot2")
+```
+
+```{r}
+library(ggplot2)
+ggplot(data = kasp) + 
+  geom_point(mapping = aes(x = X, y = Y)) +
+  facet_wrap(~SNPID, ncol = 6)
+```
+
+## Dosage calling
+
+```{r eval = FALSE}
+install.packages("fitPoly")
+```
+
+```{r}
+library(fitPoly)
+```
+
+## Cheking what happens when running the toy example from fitPoly package
+
+```{r}
+data("fitPoly_data")
+str(fitPoly_data)
+for(m in 1:6){
+  fp <- fitOneMarker(ploidy=6, marker = m,
+                     data=fitPoly_data$ploidy6$dat6x,
+                     plot = "fitted", plot.dir = "fpPlots6x")
+}
+```
+
+## Formatting data input
+
+```{r}
+filtered <- which(kasp$Call == "?" | kasp$Call == "Uncallable" | kasp$Call == "NTC")
+kasp_fitpoly <- data.frame(MarkerName=kasp$SNPID, SampleName=kasp$SubjectID, X=kasp$X,
+                           Y=kasp$Y, R=kasp$X+kasp$Y, ratio=kasp$Y/(kasp$X+kasp$Y))
+kasp_fitpoly$X[filtered] <- NA
+kasp_fitpoly$Y[filtered] <- NA
+kasp_fitpoly$R[filtered] <- NA
+kasp_fitpoly$ratio[filtered] <- NA
+str(kasp_fitpoly)
+ggplot(data = kasp_fitpoly) +
+         geom_point(mapping = aes(x = X, y = Y)) +
+         facet_wrap(~ MarkerName, ncol = 6)
+
+```
+
+## Running 30 KASPs
+
+```{r}
+# for(m in 1:5){
+  fp <- fitOneMarker(ploidy=6, marker = "snpIB00042",
+                     data=kasp_fitpoly,
+                     plot = "fitted", plot.dir = "kasp_fitpoly")
+# }
+```
+
+
+
+
+
+
